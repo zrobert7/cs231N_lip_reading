@@ -132,11 +132,11 @@ for person_ID in people:
 				if not os.path.exists('cropped/' + person_ID + '/' + data_type + '/' + phrase_ID + '/' + instance_ID):
 					os.mkdir('cropped/' + person_ID + '/' + data_type + '/' + phrase_ID + '/' + instance_ID)
 
-				for img_name in filelist:
-					if img_name.startswith('color'):
-						image = misc.imread(directory + '' + img_name)
+					for img_name in filelist:
+						if img_name.startswith('color'):
+							image = misc.imread(directory + '' + img_name)
 
-						crop_and_save_image(image, directory + '' + img_name, img_name)
+							crop_and_save_image(image, directory + '' + img_name, img_name)
 						#print image.shape
 
 				
