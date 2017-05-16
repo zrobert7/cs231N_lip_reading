@@ -109,8 +109,12 @@ y_val = None
 X_test = None
 y_test = None  
 
+if not os.path.exists('cropped'):
+			os.mkdir('cropped')
 
 for person_ID in people:
+	if not os.path.exists('cropped/' + person_ID ):
+			os.mkdir('cropped/' + person_ID)
 	for data_type in data_types:
 		if not os.path.exists('cropped/' + person_ID + '/' + data_type):
 			os.mkdir('cropped/' + person_ID + '/' + data_type)
