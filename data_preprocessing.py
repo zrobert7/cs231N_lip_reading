@@ -59,9 +59,9 @@ def crop_and_save_image(img, img_path, img_name):
 	# detect faces in the grayscale image
 	rects = detector(gray, 1)
 	if len(rects) > 1:
-		print "ERROR: more than one face detected"
+		print( "ERROR: more than one face detected")
 	if len(rects) < 1:
-		print "ERROR: no faces detected"
+		print( "ERROR: no faces detected")
 
 	rect = rects[0]
 	shape = predictor(gray, rect)
@@ -85,7 +85,7 @@ def crop_and_save_image(img, img_path, img_name):
 	# cv2.waitKey(0)
 
 	crop_img = image[y_r:y_r + h_r, x_r:x_r + w_r]
-	print '/cropped/' + img_path
+	print( '/cropped/' + img_path)
 	cv2.imwrite('cropped/' + img_path, crop_img)
 
 
@@ -121,7 +121,7 @@ for person_ID in people:
 
 			for instance_ID in folder_enum:
 				directory = person_ID + '/' + data_type + '/' + phrase_ID + '/' + instance_ID + '/'
-				print directory
+				print( directory)
 				filelist = os.listdir(directory)
 				if not os.path.exists('cropped/' + person_ID + '/' + data_type + '/' + phrase_ID + '/' + instance_ID):
 					os.mkdir('cropped/' + person_ID + '/' + data_type + '/' + phrase_ID + '/' + instance_ID)
