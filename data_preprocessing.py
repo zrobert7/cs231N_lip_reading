@@ -60,8 +60,10 @@ def crop_and_save_image(img, img_path, img_name):
 	rects = detector(gray, 1)
 	if len(rects) > 1:
 		print( "ERROR: more than one face detected")
+		return
 	if len(rects) < 1:
 		print( "ERROR: no faces detected")
+		return 
 
 	rect = rects[0]
 	shape = predictor(gray, rect)
