@@ -8,21 +8,24 @@ import pdb
 
 class Config(object):
 	def __init__(self):
-		self.num_classes = 3
-		self.batch_size = 9
+		self.num_classes = 10
 		self.num_epochs = 10
 		self.max_seq_len = 22
+		self.batch_size_train = 0
+		self.batch_size_val = 0
 
 class LipReader(object):
 	def __init__(self, config):
 		self.config = config		
 		self.load_data()
+		self.config.batch_size_train = np.shape(self.X_train)[0]
+		self.config.batch_size_val = np.shape(self.X_val)[0]
 		self.create_model()
 	
 	def create_model(self):
 		model = Sequential()
 		
-		lstm = keras.layers.recurrent.LSTM(3, input_shape=(self.config.max_seq_len,480*640*3), batch_size=self.config.batch_size)
+		lstm = keras.layers.recurrent.LSTM(10, input_shape=(self.config.max_seq_len,62*62*3), batch_size=self.config.batch_size_train)
 		model.add(lstm)
 		model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
@@ -34,12 +37,12 @@ class LipReader(object):
 		one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
 		
 		print('Fitting the model...')
-		model.fit(self.X_train, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size)
+		model.fit(self.X_train, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size_train)
 
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
 
 		print('Evaluating the model...')
-		score = model.evaluate(self.X_val, one_hot_labels_val, batch_size=self.config.batch_size)
+		score = model.evaluate(self.X_val, one_hot_labels_val, batch_size=self.config.batch_size_val)
 
 		print('Finished training, with the following val score:')
 		print(score)
@@ -63,13 +66,11 @@ class LipReader(object):
 
 		else:
 
-			#people = ['F01','F02','F04','F05','F06','F07','F08','F09','F10','F11','M01','M02','M04','M07','M08']
-			people = ['F01', 'F07', 'F11']
+			people = ['F01','F02','F04','F05','F06','F07','F08','F09','F10','F11','M01','M02','M04','M07','M08']
 			#removed 'phrases' temporarily from data types
 			data_types = ['words']
 			
-			#folder_enum = ['01','02','03','04','05','06','07','08','09','10']
-			folder_enum = ['01','02','03']
+			folder_enum = ['01','02','03','04','05','06','07','08','09','10']
 
 			VALIDATION_SPLIT = ['F07']
 			TEST_SPLIT = ['F11']
@@ -83,7 +84,7 @@ class LipReader(object):
 			self.X_test = []
 			self.y_test = [] 
 
-			directory = '../datasets/MIRACL-VC1' #/F01/words/
+			directory = '../cropped'
 			for person_id in people:
 				for word_index, word in enumerate(folder_enum):
 					for iteration in folder_enum:
@@ -93,10 +94,11 @@ class LipReader(object):
 						for img_name in filelist:
 							if img_name.startswith('color'):
 								image = misc.imread(path + '/' + img_name)
-								image = np.reshape(image, 480*640*3)
+								image = image[:62,:62,...]
+								image = np.reshape(image, 62*62*3)
 								sequence.append(image)
 								print("read: " + path + '/' + img_name)
-						pad_array = [[0] * (480*640*3)]		
+						pad_array = [[0] * (62*62*3)]		
 						sequence.extend(pad_array * (self.config.max_seq_len - len(sequence)))
 						sequence = np.stack(sequence, axis=0)
 						if person_id in TEST_SPLIT:
