@@ -23,16 +23,15 @@ class LipReader(object):
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
 	
 	def create_model(self):
-
-
 		model = Sequential()
 
-		conv = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', input_shape=(self.config.max_seq_len,self.config.MAX_WIDTH,self.config.MAX_HEIGHT,3))
+		conv = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', input_shape=(self.config.max_seq_len,self.config.MAX_WIDTH,self.config.MAX_HEIGHT,3), batch_size=self.config.batch_size_train)
 
 		pool = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid')
 		
-		lstm = keras.layers.recurrent.LSTM(10, input_shape=(self.config.max_seq_len,self.config.MAX_WIDTH*self.config.MAX_HEIGHT*3), batch_size=self.config.batch_size_train)
-		model.add(lstm)
+		#lstm = keras.layers.recurrent.LSTM(10, input_shape=(self.config.max_seq_len,self.config.MAX_WIDTH*self.config.MAX_HEIGHT*3), batch_size=self.config.batch_size_train)
+		model.add(conv)
+		#model.add(lstm)
 		model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 		#keras.preprocessing.sequence.pad_sequences(sequences, maxlen=22, padding='pre', value=0.)
@@ -53,18 +52,22 @@ class LipReader(object):
 		print('Finished training, with the following val score:')
 		print(score)
 
+
 	#X_shape: (self.config.max_seq_len,self.config.MAX_WIDTH,self.config.MAX_HEIGHT,3)
 	#y_shape: (0)
-	def create_minibatches(self, data, shape):
-		batches = []
-		for i in range(0, len(data), self.config.batch_size_train)
-			sample = data[i:i + self.config.batch_size_train]
-			if len(sample) < self.config.batch_size_train:
-				pad = np.zeros(shape)
-				sample.extend(pad * (size - len(sample)))
-			batches.append(sample)
-		return batches
 
+	'''
+	def create_minibatches(self, data, shape):
+		data = [self.X_train, self.y_train, self.X_val, self.y_val, self.X_test, self.y_test]
+		for dataset in 	
+			batches = []
+			for i in range(0, len(data), self.config.batch_size_train)
+				sample = data[i:i + self.config.batch_size_train]
+				if len(sample) < self.config.batch_size_train:
+					pad = np.zeros(shape)
+					sample.extend(pad * (size - len(sample)))
+				batches.append(sample)
+	'''
 
 
 	def load_data(self):
@@ -121,7 +124,7 @@ class LipReader(object):
 								#image = np.reshape(image, self.config.MAX_WIDTH*self.config.MAX_HEIGHT*3)
 								sequence.append(image)
 								print("read: " + path + '/' + img_name)
-						pad_array = np.zeros((self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+						pad_array = [np.zeros((self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))]
 						sequence.extend(pad_array * (self.config.max_seq_len - len(sequence)))
 						sequence = np.stack(sequence, axis=0)
 						if person_id in TEST_SPLIT:
