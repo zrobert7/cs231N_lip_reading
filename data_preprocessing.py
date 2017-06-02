@@ -16,8 +16,7 @@ from imutils import face_utils
 #http://www.pyimagesearch.com/2017/04/03/facial-landmarks-dlib-opencv-python/
 
 
-
-
+RECTANGLE_LENGTH = 90
 
 					
 def rect_to_bb(rect):
@@ -69,6 +68,8 @@ def crop_and_save_image(img, img_path, img_name):
 	shape = predictor(gray, rect)
 	shape = face_utils.shape_to_np(shape)
 	(x, y, w, h) = face_utils.rect_to_bb(rect)
+	w = RECTANGLE_LENGTH
+	h = RECTANGLE_LENGTH
 	cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
 	(x_r, y_r, w_r, h_r) = (x, y, w, h)

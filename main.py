@@ -11,27 +11,35 @@ class Config(object):
 		self.num_classes = 10
 		self.num_epochs = 10
 		self.max_seq_len = 22
-		self.batch_size_train = 32
-		self.batch_size_val = 0
+		self.batch_size = 32
 		self.MAX_WIDTH = 62
 		self.MAX_HEIGHT = 62
 
 class LipReader(object):
 	def __init__(self, config):
 		self.config = config		
-		#self.config.batch_size_train = np.shape(self.X_train)[0]
+		#self.config.batch_size = np.shape(self.X_train)[0]
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
 	
 	def create_model(self):
 		model = Sequential()
 
-		conv = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', input_shape=(self.config.max_seq_len,self.config.MAX_WIDTH,self.config.MAX_HEIGHT,3), batch_size=self.config.batch_size_train)
-
-		pool = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid')
+		conv2d = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
+		timeDistributed = keras.layers.wrappers.TimeDistributed(conv2d, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+		model.add(timeDistributed)
+		reshape1 = keras.layers.wrappers.TimeDistributed(keras.layers.core.Flatten())
+		model.add(reshape1)
+		#pool = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid')
 		
-		#lstm = keras.layers.recurrent.LSTM(10, input_shape=(self.config.max_seq_len,self.config.MAX_WIDTH*self.config.MAX_HEIGHT*3), batch_size=self.config.batch_size_train)
-		model.add(conv)
-		#model.add(lstm)
+		lstm = keras.layers.recurrent.LSTM(512)
+		model.add(lstm)
+
+		dense1 = keras.layers.core.Dense(10)
+		model.add(dense1)
+
+		activation1 = keras.layers.core.Activation('softmax')
+		model.add(activation1)
+
 		model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 		#keras.preprocessing.sequence.pad_sequences(sequences, maxlen=22, padding='pre', value=0.)
@@ -40,30 +48,28 @@ class LipReader(object):
 		#y_train doesnt have to be reshaped -- already is an array of size batch_length
 
 		one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
+		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
 		
 		print('Fitting the model...')
-		model.fit(self.X_train, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size_train)
-
-		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
-
+		history = model.fit(self.X_train, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
+							validation_data=(self.X_val, one_hot_labels_val))
+		print(history)
+		'''
 		print('Evaluating the model...')
-		score = model.evaluate(self.X_val, one_hot_labels_val, batch_size=self.config.batch_size_val)
+		score = model.evaluate(self.X_val, one_hot_labels_val, batch_size=self.config.batch_size)
 
 		print('Finished training, with the following val score:')
 		print(score)
-
-
-	#X_shape: (self.config.max_seq_len,self.config.MAX_WIDTH,self.config.MAX_HEIGHT,3)
-	#y_shape: (0)
+		'''
 
 	'''
 	def create_minibatches(self, data, shape):
 		data = [self.X_train, self.y_train, self.X_val, self.y_val, self.X_test, self.y_test]
 		for dataset in 	
 			batches = []
-			for i in range(0, len(data), self.config.batch_size_train)
-				sample = data[i:i + self.config.batch_size_train]
-				if len(sample) < self.config.batch_size_train:
+			for i in range(0, len(data), self.config.batch_size)
+				sample = data[i:i + self.config.batch_size]
+				if len(sample) < self.config.batch_size:
 					pad = np.zeros(shape)
 					sample.extend(pad * (size - len(sample)))
 				batches.append(sample)
