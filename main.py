@@ -5,6 +5,7 @@ from keras.models import Sequential
 import keras
 from scipy import misc
 import pdb
+import matplotlib.pyplot as plt
 
 class Config(object):
 	def __init__(self):
@@ -53,7 +54,11 @@ class LipReader(object):
 		print('Fitting the model...')
 		history = model.fit(self.X_train, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
 							validation_data=(self.X_val, one_hot_labels_val))
-		print(history)
+
+		self.create_plots(history)
+
+		#keras.utils.plot_model(model, to_file='model.png')
+
 		'''
 		print('Evaluating the model...')
 		score = model.evaluate(self.X_val, one_hot_labels_val, batch_size=self.config.batch_size)
@@ -74,6 +79,24 @@ class LipReader(object):
 					sample.extend(pad * (size - len(sample)))
 				batches.append(sample)
 	'''
+
+	def create_plots(self, history):
+		# summarize history for accuracy
+		plt.plot(history.history['acc'])
+		plt.plot(history.history['val_acc'])
+		plt.title('model accuracy')
+		plt.ylabel('accuracy')
+		plt.xlabel('epoch')
+		plt.legend(['train', 'test'], loc='upper left')
+		plt.show()
+		# summarize history for loss
+		plt.plot(history.history['loss'])
+		plt.plot(history.history['val_loss'])
+		plt.title('model loss')
+		plt.ylabel('loss')
+		plt.xlabel('epoch')
+		plt.legend(['train', 'test'], loc='upper left')
+		plt.show()
 
 
 	def load_data(self):
