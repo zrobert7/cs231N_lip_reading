@@ -5,7 +5,10 @@ from keras.models import Sequential
 import keras
 from scipy import misc
 import pdb
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
 
 class Config(object):
 	def __init__(self):
@@ -81,6 +84,7 @@ class LipReader(object):
 	'''
 
 	def create_plots(self, history):
+		os.mkdir('plots')
 		# summarize history for accuracy
 		plt.plot(history.history['acc'])
 		plt.plot(history.history['val_acc'])
@@ -88,7 +92,7 @@ class LipReader(object):
 		plt.ylabel('accuracy')
 		plt.xlabel('epoch')
 		plt.legend(['train', 'test'], loc='upper left')
-		plt.savefig('acc_plot.png')
+		plt.savefig('plots/acc_plot.png')
 		# summarize history for loss
 		plt.plot(history.history['loss'])
 		plt.plot(history.history['val_loss'])
@@ -96,7 +100,7 @@ class LipReader(object):
 		plt.ylabel('loss')
 		plt.xlabel('epoch')
 		plt.legend(['train', 'test'], loc='upper left')
-		plt.savefig('loss_plot.png')
+		plt.savefig('plots/loss_plot.png')
 
 
 	def load_data(self):
