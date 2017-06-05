@@ -47,9 +47,6 @@ class LipReader(object):
 		model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 		#keras.preprocessing.sequence.pad_sequences(sequences, maxlen=22, padding='pre', value=0.)
-		#self.X_train = np.reshape(self.X_train, (self.config.batch_size, -1, 480 * 640 * 3))
-		#self.X_val = np.reshape(self.X_val, (self.config.batch_size, -1, 480 * 640 * 3))
-		#y_train doesnt have to be reshaped -- already is an array of size batch_length
 
 		one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
