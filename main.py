@@ -37,7 +37,8 @@ class LipReader(object):
 		#pool = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid')
 		
 		lstm = keras.layers.recurrent.LSTM(512)
-		model.add(lstm)
+		bidirectional = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)
+		model.add(bidirectional)
 
 		dense1 = keras.layers.core.Dense(10)
 		model.add(dense1)
