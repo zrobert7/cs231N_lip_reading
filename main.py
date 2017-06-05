@@ -8,6 +8,7 @@ import pdb
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import argparse
 
 
 class Config(object):
@@ -100,18 +101,21 @@ class LipReader(object):
 		plt.legend(['train', 'validation'], loc='upper left')
 		plt.savefig('plots/loss_plot.png')
 
-	def load_data(self):
+	def load_data(self, seen_validation):
+		data_dir = 'data'
+		if seen_validation:
+			data_dir = 'data_seen'
 
-		if os.path.exists('../../data'):
+		if os.path.exists('../../' + data_dir):
 			print('loading saved data...')
-			self.X_train = np.load('../../data/X_train.npy')
-			self.y_train = np.load('../../data/y_train.npy')
+			self.X_train = np.load('../../' +  data_dir + '/X_train.npy')
+			self.y_train = np.load('../../'+ data_dir +'/y_train.npy')
 
-			self.X_val = np.load('../../data/X_val.npy')
-			self.y_val = np.load('../../data/y_val.npy')
+			self.X_val = np.load('../../'+ data_dir +'/X_val.npy')
+			self.y_val = np.load('../../'+data_dir+'/y_val.npy')
 
-			self.X_test = np.load('../../data/X_test.npy')
-			self.y_test = np.load('../../data/y_test.npy')
+			self.X_test = np.load('../../'+data_dir+'/X_test.npy')
+			self.y_test = np.load('../../'+data_dir+'/y_test.npy')
 			print('Read data arrays from disk.npy')
 			
 			#self.X_test = np.reshape(self.X_test, (np.shape(self.X_test)[0], -1, 480*640*3))
@@ -126,10 +130,13 @@ class LipReader(object):
 			data_types = ['words']
 			
 			folder_enum = ['01','02','03','04','05','06','07','08','09','10']
-			#folder_enum = ['01','02','03','04', '05']
+			#folder_enum = ['01','02','03','04']
 
-			VALIDATION_SPLIT = ['F05']
-			TEST_SPLIT = ['F06']
+			UNSEEN_VALIDATION_SPLIT = ['F05']
+			UNSEEN_TEST_SPLIT = ['F06']
+
+			SEEN_VALIDATION_SPLIT = ['02']
+			SEEN_TEST_SPLIT = ['01']
 
 			self.X_train = []
 			self.y_train = []
@@ -157,15 +164,28 @@ class LipReader(object):
 						pad_array = [np.zeros((self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))]
 						sequence.extend(pad_array * (self.config.max_seq_len - len(sequence)))
 						sequence = np.stack(sequence, axis=0)
-						if person_id in TEST_SPLIT:
-							self.X_test.append(sequence)
-							self.y_test.append(word_index)
-						elif person_id in VALIDATION_SPLIT:
-							self.X_val.append(sequence)
-							self.y_val.append(word_index)
+						
+						if seen_validation == False:
+							if person_id in UNSEEN_TEST_SPLIT:
+								self.X_test.append(sequence)
+								self.y_test.append(word_index)
+							elif person_id in UNSEEN_VALIDATION_SPLIT:
+								self.X_val.append(sequence)
+								self.y_val.append(word_index)
+							else:
+								self.X_train.append(sequence)
+								self.y_train.append(word_index)
 						else:
-							self.X_train.append(sequence)
-							self.y_train.append(word_index)
+							if iteration in SEEN_TEST_SPLIT:
+								self.X_test.append(sequence)
+								self.y_test.append(word_index)
+							elif iteration in SEEN_VALIDATION_SPLIT:
+								self.X_val.append(sequence)
+								self.y_val.append(word_index)
+							else:
+								self.X_train.append(sequence)
+								self.y_train.append(word_index)
+
 				print('Finished reading images for person ' + person_id)
 			
 			print('Finished reading images.')
@@ -173,13 +193,13 @@ class LipReader(object):
 			self.X_val = np.stack(self.X_val, axis=0)
 			self.X_test = np.stack(self.X_test, axis=0)
 			print('Finished stacking the data into the right dimensions. About to start saving to disk...')		
-			os.mkdir('../../data')
-			np.save('../../data/X_train', self.X_train)
-			np.save('../../data/y_train', np.array(self.y_train))
-			np.save('../../data/X_val', self.X_val)
-			np.save('../../data/y_val', np.array(self.y_val))
-			np.save('../../data/X_test', self.X_test)
-			np.save('../../data/y_test', np.array(self.y_test))
+			os.mkdir('../../' + data_dir)
+			np.save('../../'+data_dir+'/X_train', self.X_train)
+			np.save('../../'+data_dir+'/y_train', np.array(self.y_train))
+			np.save('../../'+data_dir+'/X_val', self.X_val)
+			np.save('../../'+data_dir+'/y_val', np.array(self.y_val))
+			np.save('../../'+data_dir+'/X_test', self.X_test)
+			np.save('../../'+data_dir+'/y_test', np.array(self.y_test))
 			print('Finished saving all data to disk.')
 
 		print('X_train shape: ', np.shape(self.X_train))
@@ -192,7 +212,14 @@ class LipReader(object):
 		print('y_test shape: ', np.shape(self.y_test))
 
 if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description='Lip reading model')
+	parser.add_argument('--seen_validation', dest='seen_validation', action='store_true')
+	#parser.add_argument('--unseen_validation', dest='seen_validation', action='store_false')
+	parser.set_defaults(seen_validation=False)
+	ARGS = parser.parse_args()
+	print("Seen validation: %r" % (ARGS.seen_validation))
+	
 	config = Config()
 	lipReader = LipReader(config)
-	lipReader.load_data()
+	lipReader.load_data(ARGS.seen_validation)
 	lipReader.create_model()
