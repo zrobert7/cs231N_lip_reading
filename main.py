@@ -96,7 +96,7 @@ class LipReader(object):
 		plt.title('model loss')
 		plt.ylabel('loss')
 		plt.xlabel('epoch')
-		plt.legend(['train', 'validation  '], loc='upper left')
+		plt.legend(['train', 'validation'], loc='upper left')
 		plt.savefig('plots/loss_plot.png')
 
 
