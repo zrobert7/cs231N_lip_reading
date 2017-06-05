@@ -90,6 +90,7 @@ class LipReader(object):
 		plt.xlabel('epoch')
 		plt.legend(['train', 'validation'], loc='upper left')
 		plt.savefig('plots/acc_plot.png')
+		plt.clf()
 		# summarize history for loss
 		plt.plot(history.history['loss'])
 		plt.plot(history.history['val_loss'])
@@ -98,7 +99,6 @@ class LipReader(object):
 		plt.xlabel('epoch')
 		plt.legend(['train', 'validation'], loc='upper left')
 		plt.savefig('plots/loss_plot.png')
-
 
 	def load_data(self):
 
