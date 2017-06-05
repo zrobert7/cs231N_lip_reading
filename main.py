@@ -91,17 +91,17 @@ class LipReader(object):
 		plt.title('model accuracy')
 		plt.ylabel('accuracy')
 		plt.xlabel('epoch')
-		plt.legend(['train', 'test'], loc='upper left')
+		plt.legend(['train', 'validation'], loc='upper left')
 		plt.savefig('plots/acc_plot.png')
+		plt.clf()
 		# summarize history for loss
 		plt.plot(history.history['loss'])
 		plt.plot(history.history['val_loss'])
 		plt.title('model loss')
 		plt.ylabel('loss')
 		plt.xlabel('epoch')
-		plt.legend(['train', 'test'], loc='upper left')
+		plt.legend(['train', 'validation'], loc='upper left')
 		plt.savefig('plots/loss_plot.png')
-
 
 	def load_data(self):
 
