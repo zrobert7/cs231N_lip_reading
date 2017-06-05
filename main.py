@@ -9,6 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
+from keras.layers.wrappers import TimeDistributed
 
 
 class Config(object):
@@ -29,12 +30,27 @@ class LipReader(object):
 	def create_model(self):
 		model = Sequential()
 
-		conv2d = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
-		timeDistributed = keras.layers.wrappers.TimeDistributed(conv2d, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
+		timeDistributed = TimeDistributed(conv2d, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 		model.add(timeDistributed)
+		
+		pool1 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
+		model.add(TimeDistributed(pool1))
+
+		conv2d2 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
+		model.add(TimeDistributed(conv2d2))
+
+		pool2 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
+		model.add(TimeDistributed(pool2))
+
+		conv2d3 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
+		model.add(TimeDistributed(conv2d3))
+
+		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
+		model.add(TimeDistributed(pool3))
+
 		reshape1 = keras.layers.wrappers.TimeDistributed(keras.layers.core.Flatten())
 		model.add(reshape1)
-		#pool = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid')
 		
 		lstm = keras.layers.recurrent.LSTM(512)
 		bidirectional = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)
