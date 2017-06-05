@@ -102,16 +102,16 @@ class LipReader(object):
 
 	def load_data(self):
 
-		if os.path.exists('data'):
+		if os.path.exists('../../data'):
 			print('loading saved data...')
-			self.X_train = np.load('data/X_train.npy')
-			self.y_train = np.load('data/y_train.npy')
+			self.X_train = np.load('../../data/X_train.npy')
+			self.y_train = np.load('../../data/y_train.npy')
 
-			self.X_val = np.load('data/X_val.npy')
-			self.y_val = np.load('data/y_val.npy')
+			self.X_val = np.load('../../data/X_val.npy')
+			self.y_val = np.load('../../data/y_val.npy')
 
-			self.X_test = np.load('data/X_test.npy')
-			self.y_test = np.load('data/y_test.npy')
+			self.X_test = np.load('../../data/X_test.npy')
+			self.y_test = np.load('../../data/y_test.npy')
 			print('Read data arrays from disk.npy')
 			
 			#self.X_test = np.reshape(self.X_test, (np.shape(self.X_test)[0], -1, 480*640*3))
@@ -173,13 +173,13 @@ class LipReader(object):
 			self.X_val = np.stack(self.X_val, axis=0)
 			self.X_test = np.stack(self.X_test, axis=0)
 			print('Finished stacking the data into the right dimensions. About to start saving to disk...')		
-			os.mkdir('data')
-			np.save('data/X_train', self.X_train)
-			np.save('data/y_train', np.array(self.y_train))
-			np.save('data/X_val', self.X_val)
-			np.save('data/y_val', np.array(self.y_val))
-			np.save('data/X_test', self.X_test)
-			np.save('data/y_test', np.array(self.y_test))
+			os.mkdir('../../data')
+			np.save('../../data/X_train', self.X_train)
+			np.save('../../data/y_train', np.array(self.y_train))
+			np.save('../../data/X_val', self.X_val)
+			np.save('../../data/y_val', np.array(self.y_val))
+			np.save('../../data/X_test', self.X_test)
+			np.save('../../data/y_test', np.array(self.y_test))
 			print('Finished saving all data to disk.')
 
 		print('X_train shape: ', np.shape(self.X_train))
