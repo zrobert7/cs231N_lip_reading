@@ -28,16 +28,16 @@ class LipReader(object):
 
 	def train_generator(self):
 		data_dir = 'data'
-		if seen_validation:
-			data_dir = 'data_seen'
 
 		X_train = np.load('../../' +  data_dir + '/X_train.npy')
 		y_train = np.load('../../'+ data_dir +'/y_train.npy')
+		y_train = keras.utils.to_categorical(y_train, num_classes=self.config.num_classes)
 		yield X_train, y_train
 
 		data_dir_2 = data_dir + "2"
 		X_train = np.load('../../' +  data_dir_2 + '/X_train.npy')
 		y_train = np.load('../../'+ data_dir_2 +'/y_train.npy')
+		y_train = keras.utils.to_categorical(y_train, num_classes=self.config.num_classes)
 
 		yield X_train, y_train
 	
@@ -64,15 +64,14 @@ class LipReader(object):
 
 		#keras.preprocessing.sequence.pad_sequences(sequences, maxlen=22, padding='pre', value=0.)
 
-		one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
+		#one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
 		
 		print('Fitting the model...')
 		#history = model.fit(self.X_train, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
 							#validation_data=(self.X_val, one_hot_labels_val))
 
-		history = model.fit_generator(self.train_generator(), 2, epochs=self.config.num_epochs, batch_size=self.config.batch_size, \
-						validation_data=(self.X_val, one_hot_labels_val))
+		history = model.fit_generator(self.train_generator(), 2, epochs=self.config.num_epochs, validation_data=(self.X_val, one_hot_labels_val))
 
 		self.create_plots(history)
 
@@ -242,6 +241,7 @@ class LipReader(object):
 			np.save('../../'+data_dir+'/y_test', np.array(self.y_test))
 			print('Finished saving all data to disk.')
 
+		'''
 		print('X_train shape: ', np.shape(self.X_train))
 		print('y_train shape: ', np.shape(self.y_train))
 
@@ -250,6 +250,7 @@ class LipReader(object):
 
 		print('X_test shape: ', np.shape(self.X_test))
 		print('y_test shape: ', np.shape(self.y_test))
+		'''
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Lip reading model')
