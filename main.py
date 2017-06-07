@@ -15,7 +15,7 @@ from keras.layers.wrappers import TimeDistributed
 class Config(object):
 	def __init__(self):
 		self.num_classes = 10
-		self.num_epochs = 10
+		self.num_epochs = 30
 		self.max_seq_len = 22
 		self.batch_size = 32
 		self.MAX_WIDTH = 90
@@ -31,7 +31,7 @@ class LipReader(object):
 		model = Sequential()
 
 		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
-		timeDistributed = TimeDistributed(conv2d, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+		timeDistributed = TimeDistributed(conv2d1, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 		model.add(timeDistributed)
 		
 		pool1 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
@@ -52,7 +52,7 @@ class LipReader(object):
 		reshape1 = keras.layers.wrappers.TimeDistributed(keras.layers.core.Flatten())
 		model.add(reshape1)
 		
-		lstm = keras.layers.recurrent.LSTM(512)
+		lstm = keras.layers.recurrent.LSTM(100)
 		bidirectional = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)
 		model.add(bidirectional)
 
@@ -207,6 +207,7 @@ class LipReader(object):
 				print('Finished reading images for person ' + person_id)
 			
 			print('Finished reading images.')
+			print(np.shape(self.X_train))
 			self.X_train = np.stack(self.X_train, axis=0)	
 			self.X_val = np.stack(self.X_val, axis=0)
 			self.X_test = np.stack(self.X_test, axis=0)
