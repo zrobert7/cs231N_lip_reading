@@ -13,11 +13,12 @@ from keras.layers.wrappers import TimeDistributed
 
 
 class Config(object):
-	def __init__(self):
-		self.num_classes = 10
-		self.num_epochs = 30
-		self.max_seq_len = 22
-		self.batch_size = 32
+	def __init__(self, nc, ne, msl, bs, lr):
+		self.num_classes = nc
+		self.num_epochs = ne
+		self.max_seq_len = msl
+		self.batch_size = bs
+                self.learning_rate = lr
 		self.MAX_WIDTH = 90
 		self.MAX_HEIGHT = 90
 
@@ -52,7 +53,8 @@ class LipReader(object):
 		reshape1 = keras.layers.wrappers.TimeDistributed(keras.layers.core.Flatten())
 		model.add(reshape1)
 		
-		lstm = keras.layers.recurrent.LSTM(100)
+	
+		lstm = keras.layers.recurrent.LSTM(512)
 		bidirectional = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)
 		model.add(bidirectional)
 
@@ -61,8 +63,9 @@ class LipReader(object):
 
 		activation1 = keras.layers.core.Activation('softmax')
 		model.add(activation1)
-
-		model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+		
+		adam = keras.optimizers.Adam(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+		model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
 		#keras.preprocessing.sequence.pad_sequences(sequences, maxlen=22, padding='pre', value=0.)
 
@@ -144,7 +147,7 @@ class LipReader(object):
 			#people = ['F01','F02','F04','F05', 'F06']
 			
 			#removed 'phrases' temporarily from data types
-			data_types = ['words', 'words_jitter', 'words_flip_xaxis']
+			data_types = ['words']#, 'words_jitter']#, 'words_flip_xaxis']
 			
 			folder_enum = ['01','02','03','04','05','06','07','08','09','10']
 			#folder_enum = ['01','02','03','04']
@@ -212,13 +215,13 @@ class LipReader(object):
 			self.X_val = np.stack(self.X_val, axis=0)
 			self.X_test = np.stack(self.X_test, axis=0)
 			print('Finished stacking the data into the right dimensions. About to start saving to disk...')		
-			os.mkdir('../../' + data_dir)
-			np.save('../../'+data_dir+'/X_train', self.X_train)
-			np.save('../../'+data_dir+'/y_train', np.array(self.y_train))
-			np.save('../../'+data_dir+'/X_val', self.X_val)
-			np.save('../../'+data_dir+'/y_val', np.array(self.y_val))
-			np.save('../../'+data_dir+'/X_test', self.X_test)
-			np.save('../../'+data_dir+'/y_test', np.array(self.y_test))
+			os.mkdir('../' + data_dir)
+			np.save('../'+data_dir+'/X_train', self.X_train)
+			np.save('../'+data_dir+'/y_train', np.array(self.y_train))
+			np.save('../'+data_dir+'/X_val', self.X_val)
+			np.save('../'+data_dir+'/y_val', np.array(self.y_val))
+			np.save('../'+data_dir+'/X_test', self.X_test)
+			np.save('../'+data_dir+'/y_test', np.array(self.y_test))
 			print('Finished saving all data to disk.')
 
 		print('X_train shape: ', np.shape(self.X_train))
@@ -238,7 +241,14 @@ if __name__ == '__main__':
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
 	
-	config = Config()
-	lipReader = LipReader(config)
-	lipReader.load_data(ARGS.seen_validation)
-	lipReader.create_model()
+        num_epochs = [25]#10
+        learning_rates = [0.0001]#, 0.00001]
+        batch_size = [64]
+        for ne in num_epochs:
+        	for bs in batch_size: 
+        		for lr in learning_rates:
+                		print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
+	        		config = Config(10, ne, 22, bs, lr)
+	        		lipReader = LipReader(config)
+	        		lipReader.load_data(ARGS.seen_validation)
+	        		lipReader.create_model()
