@@ -31,21 +31,30 @@ class LipReader(object):
 	def create_model(self):
 		model = Sequential()
 
-		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
+		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
 		timeDistributed = TimeDistributed(conv2d1, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 		model.add(timeDistributed)
+
+		model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
+		model.add(Activation('relu'))
 		
 		pool1 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		model.add(TimeDistributed(pool1))
 
-		conv2d2 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
+		conv2d2 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
 		model.add(TimeDistributed(conv2d2))
+
+		model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
+		model.add(Activation('relu'))
 
 		pool2 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		model.add(TimeDistributed(pool2))
 
-		conv2d3 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
+		conv2d3 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
 		model.add(TimeDistributed(conv2d3))
+
+		model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
+		model.add(Activation('relu'))
 
 		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		model.add(TimeDistributed(pool3))
