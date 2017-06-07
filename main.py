@@ -13,7 +13,7 @@ from keras.layers.wrappers import TimeDistributed
 
 
 class Config(object):
-	def __init__(self, nc, ne, msl, bs, lr):
+	def __init__(self, nc, ne, msl, bs, lr, dp):
 		self.num_classes = nc
 		self.num_epochs = ne
 		self.max_seq_len = msl
@@ -36,7 +36,8 @@ class LipReader(object):
 		model.add(timeDistributed)
 
 		model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
-		model.add(Activation('relu'))
+		model.add(keras.layers.core.Activation('relu'))
+		model.add(keras.layers.core.Dropout(rate=dp))
 		
 		pool1 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		model.add(TimeDistributed(pool1))
@@ -45,7 +46,8 @@ class LipReader(object):
 		model.add(TimeDistributed(conv2d2))
 
 		model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
-		model.add(Activation('relu'))
+		model.add(keras.layers.core.Activation('relu'))
+		model.add(keras.layers.core.Dropout(rate=dp))
 
 		pool2 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		model.add(TimeDistributed(pool2))
@@ -54,7 +56,8 @@ class LipReader(object):
 		model.add(TimeDistributed(conv2d3))
 
 		model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
-		model.add(Activation('relu'))
+		model.add(keras.layers.core.Activation('relu'))
+		model.add(keras.layers.core.Dropout(rate=dp))
 
 		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		model.add(TimeDistributed(pool3))
@@ -66,6 +69,10 @@ class LipReader(object):
 		lstm = keras.layers.recurrent.LSTM(512)
 		bidirectional = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)
 		model.add(bidirectional)
+
+		#model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
+		#model.add(keras.layers.core.Activation('relu'))
+		model.add(keras.layers.core.Dropout(rate=dp))
 
 		dense1 = keras.layers.core.Dense(10)
 		model.add(dense1)
@@ -250,14 +257,16 @@ if __name__ == '__main__':
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
 	
-        num_epochs = [25]#10
+        num_epochs = [35]#10
         learning_rates = [0.0001]#, 0.00001]
         batch_size = [64]
+        dropout_ = [0.5]
         for ne in num_epochs:
         	for bs in batch_size: 
         		for lr in learning_rates:
-                		print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
-	        		config = Config(10, ne, 22, bs, lr)
-	        		lipReader = LipReader(config)
-	        		lipReader.load_data(ARGS.seen_validation)
-	        		lipReader.create_model()
+	                for dp in dropout_:
+	                		print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
+		        		config = Config(10, ne, 22, bs, lr, dp)
+		        		lipReader = LipReader(config)
+		        		lipReader.load_data(ARGS.seen_validation)
+		        		lipReader.create_model()
