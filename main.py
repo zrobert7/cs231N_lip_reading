@@ -10,6 +10,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
 from keras.layers.wrappers import TimeDistributed
+from keras.applications.inception_v3 import InceptionV3
 
 
 class Config(object):
@@ -29,56 +30,60 @@ class LipReader(object):
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
 	
 	def create_model(self):
-		model = Sequential()
+
+
+		base_model = InceptionV3(weights='imagenet', include_top=False)
+
+		x = base_model.output
 
 		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
-		timeDistributed = TimeDistributed(conv2d1, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
-		model.add(timeDistributed)
+		x = TimeDistributed(conv2d1, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))(x)
 
-		model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
-		model.add(keras.layers.core.Activation('relu'))
-		model.add(keras.layers.core.Dropout(rate=dp))
+		x = keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001)(x)
+		x = keras.layers.core.Activation('relu')(x)
+		x = keras.layers.core.Dropout(rate=dp)(x)
 		
 		pool1 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
-		model.add(TimeDistributed(pool1))
+		x = TimeDistributed(pool1)(x)
 
 		conv2d2 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
-		model.add(TimeDistributed(conv2d2))
+		x = TimeDistributed(conv2d2)(x)
 
-		model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
-		model.add(keras.layers.core.Activation('relu'))
-		model.add(keras.layers.core.Dropout(rate=dp))
+		x = keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001)(x)
+		x = keras.layers.core.Activation('relu')(x)
+		x = keras.layers.core.Dropout(rate=dp)(x)
 
 		pool2 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
-		model.add(TimeDistributed(pool2))
+		x = TimeDistributed(pool2)(x)
 
 		conv2d3 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
-		model.add(TimeDistributed(conv2d3))
+		x = TimeDistributed(conv2d3)(x)
 
-		model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
-		model.add(keras.layers.core.Activation('relu'))
-		model.add(keras.layers.core.Dropout(rate=dp))
+		x = keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001)(x)
+		x = keras.layers.core.Activation('relu')(x)
+		x = keras.layers.core.Dropout(rate=dp)(x)
 
 		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
-		model.add(TimeDistributed(pool3))
+		x = TimeDistributed(pool3)(x)
 
-		reshape1 = keras.layers.wrappers.TimeDistributed(keras.layers.core.Flatten())
-		model.add(reshape1)
+		x = TimeDistributed(keras.layers.core.Flatten())(x)
 		
 	
 		lstm = keras.layers.recurrent.LSTM(512)
-		bidirectional = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)
-		model.add(bidirectional)
+		x = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)(x)
 
 		#model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
 		#model.add(keras.layers.core.Activation('relu'))
-		model.add(keras.layers.core.Dropout(rate=dp))
+		x = keras.layers.core.Dropout(rate=dp)(x)
 
-		dense1 = keras.layers.core.Dense(10)
-		model.add(dense1)
+		x = keras.layers.core.Dense(10)(x)
 
-		activation1 = keras.layers.core.Activation('softmax')
-		model.add(activation1)
+		predictions = keras.layers.core.Activation('softmax')(x)
+
+		model = Model(inputs=base_model.input, outputs=predictions)
+
+		for layer in base_model.layers:
+    		layer.trainable = False
 		
 		adam = keras.optimizers.Adam(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 		model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
@@ -258,7 +263,7 @@ if __name__ == '__main__':
 	print("Seen validation: %r" % (ARGS.seen_validation))
 	
         num_epochs = [35]#10
-        learning_rates = [0.0001]#, 0.00001]
+        learning_rates = [0.001]#, 0.00001]
         batch_size = [64]
         dropout_ = [0.5]
         for ne in num_epochs:
