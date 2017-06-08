@@ -10,7 +10,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
 from keras.layers.wrappers import TimeDistributed
-from keras.applications.inception_v3 import InceptionV3
+from keras.applications.vgg19 import VGG19
 
 
 class Config(object):
@@ -31,13 +31,14 @@ class LipReader(object):
 	
 	def create_model(self):
 
-
-		base_model = InceptionV3(weights='imagenet', include_top=False)
+		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+		base_model = TimeDistributed(VGG19(weights='imagenet', include_top=False))(input_layer)
+		#base_model = VGG19(weights='imagenet', include_top=False)
 
 		x = base_model.output
 
 		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
-		x = TimeDistributed(conv2d1, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))(x)
+		x = TimeDistributed(conv2d1)(x) #input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3)
 
 		x = keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001)(x)
 		x = keras.layers.core.Activation('relu')(x)
@@ -83,7 +84,7 @@ class LipReader(object):
 		model = Model(inputs=base_model.input, outputs=predictions)
 
 		for layer in base_model.layers:
-    		layer.trainable = False
+			layer.trainable = False
 		
 		adam = keras.optimizers.Adam(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 		model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
@@ -269,9 +270,9 @@ if __name__ == '__main__':
         for ne in num_epochs:
         	for bs in batch_size: 
         		for lr in learning_rates:
-	                for dp in dropout_:
-	                		print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
-		        		config = Config(10, ne, 22, bs, lr, dp)
-		        		lipReader = LipReader(config)
-		        		lipReader.load_data(ARGS.seen_validation)
-		        		lipReader.create_model()
+					for dp in dropout_:
+						print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
+						config = Config(10, ne, 22, bs, lr, dp)
+						lipReader = LipReader(config)
+						lipReader.load_data(ARGS.seen_validation)
+						lipReader.create_model()
