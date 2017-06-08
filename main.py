@@ -30,12 +30,11 @@ class LipReader(object):
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
 	
 	def create_model(self):
-
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
-		base_model = TimeDistributed(VGG19(weights='imagenet', include_top=False))(input_layer)
+		x = TimeDistributed(VGG19(weights='imagenet', include_top=False))(input_layer)
 		#base_model = VGG19(weights='imagenet', include_top=False)
 
-		x = base_model.output
+		#x = base_model.output
 
 		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
 		x = TimeDistributed(conv2d1)(x) #input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3)
@@ -81,7 +80,7 @@ class LipReader(object):
 
 		predictions = keras.layers.core.Activation('softmax')(x)
 
-		model = Model(inputs=base_model.input, outputs=predictions)
+		model = Model(inputs=input_layer, outputs=predictions)
 
 		for layer in base_model.layers:
 			layer.trainable = False
