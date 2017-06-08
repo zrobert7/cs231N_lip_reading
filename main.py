@@ -260,11 +260,11 @@ if __name__ == '__main__':
         num_epochs = [35]#10
         learning_rates = [0.001]#, 0.00001]
         batch_size = [16]
-        dropout_ = [0.5]
+        dropout_ = [0.2]
         for ne in num_epochs:
         	for bs in batch_size: 
         		for lr in learning_rates:
-	                for dp in dropout_:
+		                for dp in dropout_:
 	                		print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
 		        		config = Config(10, ne, 22, bs, lr, dp)
 		        		lipReader = LipReader(config)
