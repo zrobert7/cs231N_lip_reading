@@ -43,14 +43,20 @@ class LipReader(object):
 		#data_generator = keras.preprocessing.image.ImageDataGenerator()
 
 
-		#input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 				
-		vgg_base = TimeDistributed(VGG16(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3)))
+		vgg_base = VGG16(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 
-		bottleneck_features_train = vgg_base.predict_generator(self.training_generator(), np.shape(self.X_train)[0] / self.config.batch_size)
+		vgg = Model(input=vgg_base.input, output=vgg_base.output)
+
+		x = TimeDistributed(vgg)(input_layer)
+
+		bottleneck_model = Model(input=input_layer, output=x)
+
+		bottleneck_features_train = bottleneck_model.predict_generator(self.training_generator(), np.shape(self.X_train)[0] / self.config.batch_size)
 		np.save(open('bottleneck_features_train.npy', 'w'), bottleneck_features_train)
 
-		bottleneck_features_val = vgg_base.predict(self.X_val)
+		bottleneck_features_val = bottleneck_model.predict(self.X_val)
 		np.save(open('bottleneck_features_val.npy', 'w'), bottleneck_features_val)
 
 		#vgg = Model(input=vgg_base.input, output=vgg_base.output)
