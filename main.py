@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import argparse
 from keras.layers.wrappers import TimeDistributed
 from keras.applications.vgg19 import VGG19
+from keras.models import Model
 
 
 class Config(object):
@@ -19,7 +20,7 @@ class Config(object):
 		self.num_epochs = ne
 		self.max_seq_len = msl
 		self.batch_size = bs
-                self.learning_rate = lr
+		self.learning_rate = lr
 		self.MAX_WIDTH = 90
 		self.MAX_HEIGHT = 90
 
@@ -32,11 +33,22 @@ class LipReader(object):
 	def create_model(self):
 
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
-		base_model = TimeDistributed(VGG19(weights='imagenet', include_top=False))(input_layer)
+				
+		vgg_base = VGG19(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+
+		vgg = Model(input=vgg_base.input, output=vgg_base.output)
+		vgg.trainable = False
+
+		x = TimeDistributed(vgg)(input_layer)
+
+		#x = vgg.output
+		#x = TimeDistributed(vgg)(input_layer)
+
 		#base_model = VGG19(weights='imagenet', include_top=False)
 
-		x = base_model.output
+		#x = base_model.output
 
+		'''
 		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
 		x = TimeDistributed(conv2d1)(x) #input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3)
 
@@ -66,6 +78,7 @@ class LipReader(object):
 
 		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		x = TimeDistributed(pool3)(x)
+		'''
 
 		x = TimeDistributed(keras.layers.core.Flatten())(x)
 		
@@ -81,10 +94,9 @@ class LipReader(object):
 
 		predictions = keras.layers.core.Activation('softmax')(x)
 
-		model = Model(inputs=base_model.input, outputs=predictions)
 
-		for layer in base_model.layers:
-			layer.trainable = False
+		model = Model(inputs=input_layer, outputs=predictions)
+
 		
 		adam = keras.optimizers.Adam(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 		model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
@@ -100,6 +112,10 @@ class LipReader(object):
 
 		self.create_plots(history)
 
+		print('Layer names and layer indices:')
+		for i, layer in enumerate(base_model.layers):
+   			print(i, layer.name)
+
 		#keras.utils.plot_model(model, to_file='model.png')
 
 		'''
@@ -109,6 +125,7 @@ class LipReader(object):
 		print('Finished training, with the following val score:')
 		print(score)
 		'''
+
 
 	'''
 	def create_minibatches(self, data, shape):
@@ -266,7 +283,7 @@ if __name__ == '__main__':
         num_epochs = [35]#10
         learning_rates = [0.001]#, 0.00001]
         batch_size = [64]
-        dropout_ = [0.5]
+        dropout_ = [0.2]
         for ne in num_epochs:
         	for bs in batch_size: 
         		for lr in learning_rates:
