@@ -44,24 +44,19 @@ class LipReader(object):
 
 
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
-				
+		
+		'''		
 		vgg_base = VGG16(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 
 		vgg = Model(input=vgg_base.input, output=vgg_base.output)
 		vgg.trainable = False
 
 		x = TimeDistributed(vgg)(input_layer)
-
-		#x = vgg.output
-		#x = TimeDistributed(vgg)(input_layer)
-
-		#base_model = VGG19(weights='imagenet', include_top=False)
-
-		#x = base_model.output
-
 		'''
+
+
 		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
-		x = TimeDistributed(conv2d1)(x) #input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3)
+		x = TimeDistributed(conv2d1)(input_layer) #input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3)
 
 		x = keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001)(x)
 		x = keras.layers.core.Activation('relu')(x)
@@ -89,27 +84,28 @@ class LipReader(object):
 
 		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		x = TimeDistributed(pool3)(x)
-		'''
 
-		x = TimeDistributed(keras.layers.core.Flatten())(x)
+		model_one = Model(input=input_layer, output=x)
+
+		x_ = TimeDistributed(keras.layers.core.Flatten())(model_one.output)
 		
 	
 		lstm = keras.layers.recurrent.LSTM(256)
-		x = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)(x)
+		x_ = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)(x_)
 
 		#model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
 		#model.add(keras.layers.core.Activation('relu'))
-		x = keras.layers.core.Dropout(rate=dp)(x)
+		x_ = keras.layers.core.Dropout(rate=dp)(x_)
 
-		x = keras.layers.core.Dense(10)(x)
+		x_ = keras.layers.core.Dense(10)(x_)
 
-		predictions = keras.layers.core.Activation('softmax')(x)
+		predictions = keras.layers.core.Activation('softmax')(x_)
 
-		model = Model(inputs=input_layer, outputs=predictions)
+		model_two = Model(inputs=model_one.output, outputs=predictions)
 
 		
 		adam = keras.optimizers.Adam(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-		model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+		model_two.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
 		#keras.preprocessing.sequence.pad_sequences(sequences, maxlen=22, padding='pre', value=0.)
 
@@ -121,8 +117,10 @@ class LipReader(object):
 							validation_data=(self.X_val, one_hot_labels_val))
 		'''
 
-		history = model.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
+		history = model_two.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
 					 epochs=self.config.num_epochs, validation_data=(self.X_val, one_hot_labels_val))
+
+		model_two.save_weights('first_iter.h5')
 
 		self.create_plots(history)
 
@@ -296,7 +294,7 @@ if __name__ == '__main__':
 	
         num_epochs = [35]#10
         learning_rates = [0.001]#, 0.00001]
-        batch_size = [10]
+        batch_size = [60]
         dropout_ = [0.2]
         for ne in num_epochs:
         	for bs in batch_size: 
