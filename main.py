@@ -12,7 +12,7 @@ import argparse
 from keras.layers.wrappers import TimeDistributed
 from keras.applications.vgg19 import VGG19
 from keras.models import Model
-
+from keras.preprocessing.image import ImageDataGenerator
 
 class Config(object):
 	def __init__(self, nc, ne, msl, bs, lr, dp):
@@ -31,7 +31,7 @@ class LipReader(object):
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
 	
 	def create_model(self):
-		data_generator = keras.preprocessing.image.ImageDataGenerator()
+		data_generator = ImageDataGenerator()
 
 
 
@@ -117,7 +117,7 @@ class LipReader(object):
 							validation_data=(self.X_val, one_hot_labels_val))
 		'''
 
-		history = model.fit_generator(data_generator.flow(self.X_train, one_hot_labels_train, batch_size=self.config.batch_size)\
+		history = model.fit_generator(data_generator.flow(self.X_train, one_hot_labels_train, batch_size=self.config.batch_size),\
 					steps_per_epoch=len(self.X_train) / self.config.batch_size, epochs=self.config.num_epochs)
 
 		self.create_plots(history)
