@@ -10,7 +10,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
 from keras.layers.wrappers import TimeDistributed
-from keras.applications.vgg19 import VGG19
+from keras.applications.vgg16 import VGG16
 from keras.models import Model
 from keras.preprocessing.image import ImageDataGenerator
 
@@ -21,8 +21,8 @@ class Config(object):
 		self.max_seq_len = msl
 		self.batch_size = bs
 		self.learning_rate = lr
-		self.MAX_WIDTH = 62
-		self.MAX_HEIGHT = 62
+		self.MAX_WIDTH = 90
+		self.MAX_HEIGHT = 90
 
 class LipReader(object):
 	def __init__(self, config):
@@ -45,7 +45,7 @@ class LipReader(object):
 
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 				
-		vgg_base = VGG19(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+		vgg_base = VGG16(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 
 		vgg = Model(input=vgg_base.input, output=vgg_base.output)
 		vgg.trainable = False
@@ -94,7 +94,7 @@ class LipReader(object):
 		x = TimeDistributed(keras.layers.core.Flatten())(x)
 		
 	
-		lstm = keras.layers.recurrent.LSTM(512)
+		lstm = keras.layers.recurrent.LSTM(256)
 		x = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)(x)
 
 		#model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
@@ -296,7 +296,7 @@ if __name__ == '__main__':
 	
         num_epochs = [35]#10
         learning_rates = [0.001]#, 0.00001]
-        batch_size = [60]
+        batch_size = [10]
         dropout_ = [0.2]
         for ne in num_epochs:
         	for bs in batch_size: 
