@@ -10,15 +10,17 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
 from keras.layers.wrappers import TimeDistributed
-
+from keras.applications.vgg16 import VGG16
+from keras.models import Model
+from keras.preprocessing.image import ImageDataGenerator
 
 class Config(object):
-	def __init__(self, nc, ne, msl, bs, lr):
+	def __init__(self, nc, ne, msl, bs, lr, dp):
 		self.num_classes = nc
 		self.num_epochs = ne
 		self.max_seq_len = msl
 		self.batch_size = bs
-                self.learning_rate = lr
+		self.learning_rate = lr
 		self.MAX_WIDTH = 90
 		self.MAX_HEIGHT = 90
 
@@ -27,55 +29,104 @@ class LipReader(object):
 		self.config = config		
 		#self.config.batch_size = np.shape(self.X_train)[0]
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
+
+	def training_generator(self):
+		while True:
+			for i in range(np.shape(self.X_train)[0] / self.config.batch_size):
+				x = self.X_train[i * self.config.batch_size : (i + 1) * self.config.batch_size]
+				y = self.y_train[i * self.config.batch_size : (i + 1) * self.config.batch_size]
+				one_hot_labels_train = keras.utils.to_categorical(y, num_classes=self.config.num_classes)
+				yield (x,one_hot_labels_train)
+
 	
 	def create_model(self):
-		model = Sequential()
+		#data_generator = keras.preprocessing.image.ImageDataGenerator()
 
-		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
-		timeDistributed = TimeDistributed(conv2d1, input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
-		model.add(timeDistributed)
+
+		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+		
+		'''		
+		vgg_base = VGG16(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
+
+		vgg = Model(input=vgg_base.input, output=vgg_base.output)
+		vgg.trainable = False
+
+		x = TimeDistributed(vgg)(input_layer)
+		'''
+
+
+		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
+		x = TimeDistributed(conv2d1)(input_layer) #input_shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3)
+
+		x = keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001)(x)
+		x = keras.layers.core.Activation('relu')(x)
+		x = keras.layers.core.Dropout(rate=dp)(x)
 		
 		pool1 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
-		model.add(TimeDistributed(pool1))
+		x = TimeDistributed(pool1)(x)
 
-		conv2d2 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
-		model.add(TimeDistributed(conv2d2))
+		conv2d2 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
+		x = TimeDistributed(conv2d2)(x)
+
+		x = keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001)(x)
+		x = keras.layers.core.Activation('relu')(x)
+		x = keras.layers.core.Dropout(rate=dp)(x)
 
 		pool2 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
-		model.add(TimeDistributed(pool2))
+		x = TimeDistributed(pool2)(x)
 
-		conv2d3 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation='relu')
-		model.add(TimeDistributed(conv2d3))
+		conv2d3 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
+		x = TimeDistributed(conv2d3)(x)
+
+		x = keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001)(x)
+		x = keras.layers.core.Activation('relu')(x)
+		x = keras.layers.core.Dropout(rate=dp)(x)
 
 		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
-		model.add(TimeDistributed(pool3))
+		x = TimeDistributed(pool3)(x)
 
-		reshape1 = keras.layers.wrappers.TimeDistributed(keras.layers.core.Flatten())
-		model.add(reshape1)
+		model_one = Model(input=input_layer, output=x)
+
+		x_ = TimeDistributed(keras.layers.core.Flatten())(model_one.output)
+		
 	
-		lstm = keras.layers.recurrent.LSTM(512)
-		bidirectional = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)
-		model.add(bidirectional)
+		lstm = keras.layers.recurrent.LSTM(256)
+		x_ = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)(x_)
 
-		dense1 = keras.layers.core.Dense(10)
-		model.add(dense1)
+		#model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
+		#model.add(keras.layers.core.Activation('relu'))
+		x_ = keras.layers.core.Dropout(rate=dp)(x_)
 
-		activation1 = keras.layers.core.Activation('softmax')
-		model.add(activation1)
+		x_ = keras.layers.core.Dense(10)(x_)
+
+		predictions = keras.layers.core.Activation('softmax')(x_)
+
+		model_two = Model(inputs=model_one.output, outputs=predictions)
+
 		
 		adam = keras.optimizers.Adam(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-		model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+		model_two.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
 		#keras.preprocessing.sequence.pad_sequences(sequences, maxlen=22, padding='pre', value=0.)
 
-		one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
 		
 		print('Fitting the model...')
+		'''
 		history = model.fit(self.X_train, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
 							validation_data=(self.X_val, one_hot_labels_val))
+		'''
+
+		history = model_two.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
+					 epochs=self.config.num_epochs, validation_data=(self.X_val, one_hot_labels_val))
+
+		model_two.save_weights('first_iter.h5')
 
 		self.create_plots(history)
+
+		#print('Layer names and layer indices:')
+		#for i, layer in enumerate(base_model.layers):
+   			#print(i, layer.name)
 
 		#keras.utils.plot_model(model, to_file='model.png')
 
@@ -86,6 +137,7 @@ class LipReader(object):
 		print('Finished training, with the following val score:')
 		print(score)
 		'''
+
 
 	'''
 	def create_minibatches(self, data, shape):
@@ -209,6 +261,7 @@ class LipReader(object):
 				print('Finished reading images for person ' + person_id)
 			
 			print('Finished reading images.')
+			print(np.shape(self.X_train))
 			self.X_train = np.stack(self.X_train, axis=0)	
 			self.X_val = np.stack(self.X_val, axis=0)
 			self.X_test = np.stack(self.X_test, axis=0)
@@ -239,14 +292,16 @@ if __name__ == '__main__':
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
 	
-        num_epochs = [25]#10
-        learning_rates = [0.0001]#, 0.00001]
-        batch_size = [64]
+        num_epochs = [35]#10
+        learning_rates = [0.001]#, 0.00001]
+        batch_size = [60]
+        dropout_ = [0.2]
         for ne in num_epochs:
         	for bs in batch_size: 
         		for lr in learning_rates:
-                		print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
-	        		config = Config(10, ne, 22, bs, lr)
-	        		lipReader = LipReader(config)
-	        		lipReader.load_data(ARGS.seen_validation)
-	        		lipReader.create_model()
+		                for dp in dropout_:
+	                		print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
+		        		config = Config(10, ne, 22, bs, lr, dp)
+		        		lipReader = LipReader(config)
+		        		lipReader.load_data(ARGS.seen_validation)
+		        		lipReader.create_model()
