@@ -31,7 +31,6 @@ class LipReader(object):
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
 	
 	def create_model(self):
-
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 				
 		vgg_base = VGG19(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
@@ -93,7 +92,6 @@ class LipReader(object):
 		x = keras.layers.core.Dense(10)(x)
 
 		predictions = keras.layers.core.Activation('softmax')(x)
-
 
 		model = Model(inputs=input_layer, outputs=predictions)
 
@@ -282,14 +280,14 @@ if __name__ == '__main__':
 	
         num_epochs = [35]#10
         learning_rates = [0.001]#, 0.00001]
-        batch_size = [64]
+        batch_size = [16]
         dropout_ = [0.2]
         for ne in num_epochs:
         	for bs in batch_size: 
         		for lr in learning_rates:
-					for dp in dropout_:
-						print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
-						config = Config(10, ne, 22, bs, lr, dp)
-						lipReader = LipReader(config)
-						lipReader.load_data(ARGS.seen_validation)
-						lipReader.create_model()
+		                for dp in dropout_:
+	                		print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
+		        		config = Config(10, ne, 22, bs, lr, dp)
+		        		lipReader = LipReader(config)
+		        		lipReader.load_data(ARGS.seen_validation)
+		        		lipReader.create_model()
