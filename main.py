@@ -139,7 +139,7 @@ class LipReader(object):
 
 		#print('Layer names and layer indices:')
 		#for i, layer in enumerate(base_model.layers):
-   			#print(i, layer.name)
+			#print(i, layer.name)
 
 		#keras.utils.plot_model(model, to_file='model.png')
 
@@ -305,16 +305,16 @@ if __name__ == '__main__':
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
 	
-        num_epochs = [35]#10
-        learning_rates = [0.001]#, 0.00001]
-        batch_size = [10]
-        dropout_ = [0.2]
-        for ne in num_epochs:
-        	for bs in batch_size: 
-        		for lr in learning_rates:
-		                for dp in dropout_:
-	                		print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
-		        		config = Config(10, ne, 22, bs, lr, dp)
-		        		lipReader = LipReader(config)
-		        		lipReader.load_data(ARGS.seen_validation)
-		        		lipReader.create_model()
+		num_epochs = [35]#10
+		learning_rates = [0.001]#, 0.00001]
+		batch_size = [10]
+		dropout_ = [0.2]
+		for ne in num_epochs:
+			for bs in batch_size: 
+				for lr in learning_rates:
+						for dp in dropout_:
+							print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
+						config = Config(10, ne, 22, bs, lr, dp)
+						lipReader = LipReader(config)
+						lipReader.load_data(ARGS.seen_validation)
+						lipReader.create_model()
