@@ -21,21 +21,27 @@ class Config(object):
 		self.max_seq_len = msl
 		self.batch_size = bs
 		self.learning_rate = lr
-		self.MAX_WIDTH = 90
-		self.MAX_HEIGHT = 90
+		self.MAX_WIDTH = 62
+		self.MAX_HEIGHT = 62
 
 class LipReader(object):
 	def __init__(self, config):
 		self.config = config		
 		#self.config.batch_size = np.shape(self.X_train)[0]
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
+
+	def training_generator(self):
+		i = 0
+		while True:
+			x = self.X_train[i:i*self.config.batch_size]
+			y = self.y_train[i:i*self.config.batch_size]
+			one_hot_labels_train = keras.utils.to_categorical(y, num_classes=self.config.num_classes)
+			i = i + 1
+			yield (x,one_hot_labels_train)
+
 	
 	def create_model(self):
-		data_generator = ImageDataGenerator()
-
-
-
-
+		#data_generator = keras.preprocessing.image.ImageDataGenerator()
 
 
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
@@ -108,7 +114,6 @@ class LipReader(object):
 
 		#keras.preprocessing.sequence.pad_sequences(sequences, maxlen=22, padding='pre', value=0.)
 
-		one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
 		
 		print('Fitting the model...')
@@ -117,8 +122,8 @@ class LipReader(object):
 							validation_data=(self.X_val, one_hot_labels_val))
 		'''
 
-		history = model.fit_generator(data_generator.flow(self.X_train, one_hot_labels_train, batch_size=self.config.batch_size),\
-					steps_per_epoch=len(self.X_train) / self.config.batch_size, epochs=self.config.num_epochs)
+		history = model.fit_generator(self.training_generator(), steps_per_epoch=len(self.X_train) / self.config.batch_size,\
+					 epochs=self.config.num_epochs, validation_data=(self.X_val, one_hot_labels_val))
 
 		self.create_plots(history)
 
