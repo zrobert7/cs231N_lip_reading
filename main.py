@@ -31,13 +31,12 @@ class LipReader(object):
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
 
 	def training_generator(self):
-		i = 0
 		while True:
-			x = self.X_train[i:i*self.config.batch_size]
-			y = self.y_train[i:i*self.config.batch_size]
-			one_hot_labels_train = keras.utils.to_categorical(y, num_classes=self.config.num_classes)
-			i = i + 1
-			yield (x,one_hot_labels_train)
+			for i in range(np.shape(self.X_train)[0] / self.config.batch_size):
+				x = self.X_train[i * self.config.batch_size : (i + 1) * self.config.batch_size]
+				y = self.y_train[i * self.config.batch_size : (i + 1) * self.config.batch_size]
+				one_hot_labels_train = keras.utils.to_categorical(y, num_classes=self.config.num_classes)
+				yield (x,one_hot_labels_train)
 
 	
 	def create_model(self):
@@ -122,14 +121,14 @@ class LipReader(object):
 							validation_data=(self.X_val, one_hot_labels_val))
 		'''
 
-		history = model.fit_generator(self.training_generator(), steps_per_epoch=len(self.X_train) / self.config.batch_size,\
+		history = model.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
 					 epochs=self.config.num_epochs, validation_data=(self.X_val, one_hot_labels_val))
 
 		self.create_plots(history)
 
-		print('Layer names and layer indices:')
-		for i, layer in enumerate(base_model.layers):
-   			print(i, layer.name)
+		#print('Layer names and layer indices:')
+		#for i, layer in enumerate(base_model.layers):
+   			#print(i, layer.name)
 
 		#keras.utils.plot_model(model, to_file='model.png')
 
@@ -297,7 +296,7 @@ if __name__ == '__main__':
 	
         num_epochs = [35]#10
         learning_rates = [0.001]#, 0.00001]
-        batch_size = [16]
+        batch_size = [60]
         dropout_ = [0.2]
         for ne in num_epochs:
         	for bs in batch_size: 
