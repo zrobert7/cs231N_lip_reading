@@ -31,6 +31,13 @@ class LipReader(object):
 		#self.config.batch_size_val = np.shape(self.X_val)[0]
 	
 	def create_model(self):
+		data_generator = keras.preprocessing.image.ImageDataGenerator()
+
+
+
+
+
+
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 				
 		vgg_base = VGG19(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
@@ -105,8 +112,13 @@ class LipReader(object):
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
 		
 		print('Fitting the model...')
+		'''
 		history = model.fit(self.X_train, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
 							validation_data=(self.X_val, one_hot_labels_val))
+		'''
+
+		history = model.fit_generator(data_generator.flow(self.X_train, one_hot_labels_train, batch_size=self.config.batch_size)\
+					steps_per_epoch=len(self.X_train) / self.config.batch_size, epochs=self.config.num_epochs)
 
 		self.create_plots(history)
 
