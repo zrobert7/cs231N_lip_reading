@@ -58,7 +58,7 @@ class LipReader(object):
 		vgg = Model(input=vgg_base.input, output=vgg_base.output)
 		
 		for layer in vgg.layers[:15]:
-    		layer.trainable = False
+			layer.trainable = False
 		
 		x = TimeDistributed(vgg)(input_layer)
 
@@ -137,7 +137,7 @@ class LipReader(object):
 		final_model = Model(input=input_layer, output=preds)
 
 		
-		adam = keras.optimizers.Adam(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+		adam = keras.optimizers.SGD(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 		final_model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
 		#one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
@@ -321,9 +321,9 @@ if __name__ == '__main__':
 	parser.set_defaults(seen_validation=False)
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
-	num_epochs = [50]#10
-	learning_rates = [0.0005]#, 0.0005]
-	batch_size = [10]
+	num_epochs = [10]#10
+	learning_rates = [0.0001]#, 0.0005]
+	batch_size = [50]
 	dropout_ = [0.2]
 	for ne in num_epochs:
 		for bs in batch_size: 
