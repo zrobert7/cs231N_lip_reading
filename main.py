@@ -230,21 +230,6 @@ class LipReader(object):
 		plt.xlabel('Predicted label')
 		plt.savefig('confusion.png')
 
-# Compute confusion matrix
-cnf_matrix = confusion_matrix(y_test, y_pred)
-np.set_printoptions(precision=2)
-
-# Plot non-normalized confusion matrix
-plt.figure()
-plot_confusion_matrix(cnf_matrix, classes=class_names,
-					  title='Confusion matrix, without normalization')
-
-# Plot normalized confusion matrix
-plt.figure()
-plot_confusion_matrix(cnf_matrix, classes=class_names, normalize=True,
-					  title='Normalized confusion matrix')
-
-plt.show()
 
 	def load_data(self, seen_validation):
 		data_dir = 'data'
