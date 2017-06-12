@@ -41,12 +41,15 @@ class LipReader(object):
 	
 	def create_model(self, seen_validation):
 		np.random.seed(0)
+		
+		'''
 		bottleneck_train_path = 'bottleneck_features_train.npy'
 		bottleneck_val_path = 'bottleneck_features_val.npy'
 		
 		if seen_validation is False:
 			bottleneck_train_path = 'unseen_bottleneck_features_train.npy'
 			bottleneck_val_path = 'unseen_bottleneck_features_val.npy'
+		'''
 
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 				
@@ -55,9 +58,9 @@ class LipReader(object):
 		vgg = Model(input=vgg_base.input, output=vgg_base.output)
 		x = TimeDistributed(vgg)(input_layer)
 
-		bottleneck_model = Model(input=input_layer, output=x)
+		#bottleneck_model = Model(input=input_layer, output=x)
 
-
+		'''
 		if not os.path.exists(bottleneck_train_path):
 			bottleneck_features_train = bottleneck_model.predict_generator(self.training_generator(), steps=np.shape(self.X_train)[0] / self.config.batch_size)
 			np.save(bottleneck_train_path, bottleneck_features_train)
@@ -65,12 +68,7 @@ class LipReader(object):
 		if not os.path.exists(bottleneck_val_path):
 			bottleneck_features_val = bottleneck_model.predict(self.X_val)
 			np.save(bottleneck_val_path, bottleneck_features_val)
-
-		#vgg = Model(input=vgg_base.input, output=vgg_base.output)
-		#vgg.trainable = False
-
-		#x = TimeDistributed(vgg)(input_layer)
-
+		'''
 
 		'''
 		conv2d1 = keras.layers.convolutional.Conv2D(3, 5, strides=(2,2), padding='same', activation=None)
@@ -103,24 +101,24 @@ class LipReader(object):
 		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		x = TimeDistributed(pool3)(x)
 		'''
-		train_data = np.load(bottleneck_train_path)
-		val_data = np.load(bottleneck_val_path)
+		
+		#train_data = np.load(bottleneck_train_path)
+		#val_data = np.load(bottleneck_val_path)
 
 
-		model = Sequential()
-		model.add(TimeDistributed(keras.layers.core.Flatten(),input_shape=train_data.shape[1:]))
+		x = TimeDistributed(keras.layers.core.Flatten(),input_shape=train_data.shape[1:])(x)
 		
 	
 		lstm = keras.layers.recurrent.LSTM(256)
-		model.add(keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None))
+		x = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)(x)
 
 		#model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
 		#model.add(keras.layers.core.Activation('relu'))
-		model.add(keras.layers.core.Dropout(rate=dp))
+		x = keras.layers.core.Dropout(rate=dp)(x)
 
-		model.add(keras.layers.core.Dense(10))
+		x = keras.layers.core.Dense(10)(x)
 
-		model.add(keras.layers.core.Activation('softmax'))
+		predictions = keras.layers.core.Activation('softmax')(x)
 
 		#model = Model(inputs=input_layer, outputs=predictions)
 
