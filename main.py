@@ -32,7 +32,7 @@ class LipReader(object):
 
 	def training_generator(self):
 		while True:
-			for i in range(np.shape(self.X_train)[0] / self.config.batch_size):
+			for i in range(int(np.shape(self.X_train)[0] / self.config.batch_size)):
 				x = self.X_train[i * self.config.batch_size : (i + 1) * self.config.batch_size]
 				y = self.y_train[i * self.config.batch_size : (i + 1) * self.config.batch_size]
 				one_hot_labels_train = keras.utils.to_categorical(y, num_classes=self.config.num_classes)
@@ -48,16 +48,17 @@ class LipReader(object):
 		vgg_base = VGG16(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 
 		vgg = Model(input=vgg_base.input, output=vgg_base.output)
-
 		x = TimeDistributed(vgg)(input_layer)
 
 		bottleneck_model = Model(input=input_layer, output=x)
+		#bottleneck_features_train = bottleneck_model.predict(self.X_train)
+		#bottleneck_features_train = bottleneck_model.predict_generator(self.training_generator(), steps=np.shape(self.X_train)[0] / self.config.batch_size)
+		#np.save(open('bottleneck_features_train.npy', 'w'), bottleneck_features_train)
+		#np.save('bottleneck_features_train.npy', bottleneck_features_train)
 
-		bottleneck_features_train = bottleneck_model.predict_generator(self.training_generator(), np.shape(self.X_train)[0] / self.config.batch_size)
-		np.save(open('bottleneck_features_train.npy', 'w'), bottleneck_features_train)
-
-		bottleneck_features_val = bottleneck_model.predict(self.X_val)
-		np.save(open('bottleneck_features_val.npy', 'w'), bottleneck_features_val)
+		#bottleneck_features_val = bottleneck_model.predict(self.X_val)
+		#np.save(open('bottleneck_features_val.npy', 'w'), bottleneck_features_val)
+		#np.save('bottleneck_features_val.npy', bottleneck_features_val)
 
 		#vgg = Model(input=vgg_base.input, output=vgg_base.output)
 		#vgg.trainable = False
@@ -96,9 +97,12 @@ class LipReader(object):
 		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		x = TimeDistributed(pool3)(x)
 		'''
+		train_data = np.load('bottleneck_features_train.npy')
+		val_data = np.load('bottleneck_features_val.npy')
+
 
 		model = Sequential()
-		model.add(TimeDistributed(keras.layers.core.Flatten()))
+		model.add(TimeDistributed(keras.layers.core.Flatten(),input_shape=train_data.shape[1:]))
 		
 	
 		lstm = keras.layers.recurrent.LSTM(256)
@@ -122,10 +126,6 @@ class LipReader(object):
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
 		
 		print('Fitting the model...')
-
-		train_data = np.load(open('bottleneck_features_train.npy'))
-		val_data = np.load(open('bottleneck_features_validation.npy'))
-
 
 		history = model.fit(train_data, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
 							validation_data=(val_data, one_hot_labels_val))
@@ -304,17 +304,16 @@ if __name__ == '__main__':
 	parser.set_defaults(seen_validation=False)
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
-	
-		num_epochs = [35]#10
-		learning_rates = [0.001]#, 0.00001]
-		batch_size = [10]
-		dropout_ = [0.2]
-		for ne in num_epochs:
-			for bs in batch_size: 
-				for lr in learning_rates:
-						for dp in dropout_:
-							print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
-						config = Config(10, ne, 22, bs, lr, dp)
-						lipReader = LipReader(config)
-						lipReader.load_data(ARGS.seen_validation)
-						lipReader.create_model()
+	num_epochs = [70]#10
+	learning_rates = [0.001]#, 0.00001]
+	batch_size = [10]
+	dropout_ = [0.2]
+	for ne in num_epochs:
+		for bs in batch_size: 
+			for lr in learning_rates:
+				for dp in dropout_:
+					print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
+					config = Config(10, ne, 22, bs, lr, dp)
+					lipReader = LipReader(config)
+					lipReader.load_data(ARGS.seen_validation)
+					lipReader.create_model()
