@@ -23,6 +23,8 @@ class Config(object):
 		self.learning_rate = lr
 		self.MAX_WIDTH = 90
 		self.MAX_HEIGHT = 90
+                self.dropout = dp
+  		np.random.seed(1337)
 
 class LipReader(object):
 	def __init__(self, config):
@@ -316,7 +318,7 @@ if __name__ == '__main__':
 		for bs in batch_size: 
 			for lr in learning_rates:
 				for dp in dropout_:
-					print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
+					print 'Epochs: %d    Batch Size: %d Learning Rate: %f  Dropout: %f'%( ne, bs, lr, dp)
 					config = Config(10, ne, 22, bs, lr, dp)
 					lipReader = LipReader(config)
 					lipReader.load_data(ARGS.seen_validation)
