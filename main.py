@@ -56,6 +56,10 @@ class LipReader(object):
 		vgg_base = VGG16(weights='imagenet', include_top=False, input_shape=(self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 
 		vgg = Model(input=vgg_base.input, output=vgg_base.output)
+		
+		for layer in vgg.layers[:15]:
+    		layer.trainable = False
+		
 		x = TimeDistributed(vgg)(input_layer)
 
 		model = Model(input=input_layer, output=x)
@@ -107,54 +111,54 @@ class LipReader(object):
 		#train_data = np.load(bottleneck_train_path)
 		#val_data = np.load(bottleneck_val_path)
 
+		input_layer_2 = keras.layers.Input(shape=model.output_shape[1:])
 
-		model_top = Sequential()
-		model.add(TimeDistributed(keras.layers.core.Flatten(),input_shape=model.output_shape[1:]))
+		x = TimeDistributed(keras.layers.core.Flatten())(input_layer_2)
 		
 	
 		lstm = keras.layers.recurrent.LSTM(256)
-		model_top.add(keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None))
+		x = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)(x)
 
 		#model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
 		#model.add(keras.layers.core.Activation('relu'))
-		model_top.add(keras.layers.core.Dropout(rate=dp))
+		x = keras.layers.core.Dropout(rate=dp)(x)
 
-		model_top.add(keras.layers.core.Dense(10))
+		x = keras.layers.core.Dense(10)(x)
 
-		model_top.add(keras.layers.core.Activation('softmax'))
+		preds = keras.layers.core.Activation('softmax')(x)
+
+		model_top = Model(input=input_layer_2, output=preds)
 
 		model_top.load_weights('bottleneck_TOP_LAYER.h5')
 
-		preds = model_top(model)
+		x = model(input_layer)
+		preds = model_top(x)
 
 		final_model = Model(input=input_layer, output=preds)
-
-		#model = Model(inputs=input_layer, outputs=predictions)
 
 		
 		adam = keras.optimizers.Adam(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 		final_model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
-		one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
+		#one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
 		
 		print('Fitting the model...')
-
+		'''
 		history = final_model.fit(train_data, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
 							validation_data=(val_data, one_hot_labels_val))
-		
+		'''
 
-		'''
-		history = model.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
+		
+		history = final_model.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
 					 epochs=self.config.num_epochs, validation_data=(self.X_val, one_hot_labels_val))
-		'''
+		
 		self.create_plots(history)
 
-		#print('Layer names and layer indices:')
-		#for i, layer in enumerate(base_model.layers):
-			#print(i, layer.name)
+		print('Layer names and layer indices:')
+		for i, layer in enumerate(final_model.layers):
+			print(i, layer.name)
 
-		#keras.utils.plot_model(model, to_file='model.png')
 
 		'''
 		print('Evaluating the model...')
