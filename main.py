@@ -141,7 +141,7 @@ class LipReader(object):
 		history = model.fit(train_data, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
 							validation_data=(val_data, one_hot_labels_val))
 
-		predictions = model.predict(self.X_test)
+		predictions = model.predict(bottleneck_model.predict(self.X_test)) 
 
 		labels = ['Begin', 'Choose', 'Connection', 'Navigation', 'Next', 'Previous', 'Start', 'Stop', 'Hello', 'Web']
 		cm = confusion_matrix(self.y_test, predictions, labels=labels)
@@ -350,7 +350,7 @@ if __name__ == '__main__':
 	parser.set_defaults(seen_validation=False)
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
-	num_epochs = [20]#10
+	num_epochs = [5]#10
 	learning_rates = [0.00006]#, 0.0005]
 	batch_size = [50]
 	dropout_ = [0.2]
