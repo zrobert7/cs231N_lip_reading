@@ -39,9 +39,14 @@ class LipReader(object):
 				yield (x,one_hot_labels_train)
 
 	
-	def create_model(self):
-		#data_generator = keras.preprocessing.image.ImageDataGenerator()
+	def create_model(self, seen_validation):
 		np.random.seed(0)
+		bottleneck_train_path = 'bottleneck_features_train.npy'
+		bottleneck_val_path = 'bottleneck_features_val.npy'
+		
+		if seen_validation is False:
+			bottleneck_train_path = 'unseen_bottleneck_features_train.npy'
+			bottleneck_val_path = 'unseen_bottleneck_features_val.npy'
 
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 				
@@ -51,11 +56,15 @@ class LipReader(object):
 		x = TimeDistributed(vgg)(input_layer)
 
 		bottleneck_model = Model(input=input_layer, output=x)
-		bottleneck_features_train = bottleneck_model.predict_generator(self.training_generator(), steps=np.shape(self.X_train)[0] / self.config.batch_size)
-		np.save('bottleneck_features_train.npy', bottleneck_features_train)
 
-		bottleneck_features_val = bottleneck_model.predict(self.X_val)
-		np.save('bottleneck_features_val.npy', bottleneck_features_val)
+
+		if not os.path.exists(bottleneck_train_path):
+			bottleneck_features_train = bottleneck_model.predict_generator(self.training_generator(), steps=np.shape(self.X_train)[0] / self.config.batch_size)
+			np.save(bottleneck_train_path, bottleneck_features_train)
+
+		if not os.path.exists(bottleneck_val_path):
+			bottleneck_features_val = bottleneck_model.predict(self.X_val)
+			np.save(bottleneck_val_path, bottleneck_features_val)
 
 		#vgg = Model(input=vgg_base.input, output=vgg_base.output)
 		#vgg.trainable = False
@@ -94,8 +103,8 @@ class LipReader(object):
 		pool3 = keras.layers.pooling.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format='channels_last')
 		x = TimeDistributed(pool3)(x)
 		'''
-		train_data = np.load('bottleneck_features_train.npy')
-		val_data = np.load('bottleneck_features_val.npy')
+		train_data = np.load(bottleneck_train_path)
+		val_data = np.load(bottleneck_val_path)
 
 
 		model = Sequential()
@@ -313,4 +322,4 @@ if __name__ == '__main__':
 					config = Config(10, ne, 22, bs, lr, dp)
 					lipReader = LipReader(config)
 					lipReader.load_data(ARGS.seen_validation)
-					lipReader.create_model()
+					lipReader.create_model(ARGS.seen_validation)
