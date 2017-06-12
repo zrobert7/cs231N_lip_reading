@@ -26,7 +26,7 @@ class Config(object):
 		self.learning_rate = lr
 		self.MAX_WIDTH = 90
 		self.MAX_HEIGHT = 90
-				self.dropout = dp
+		self.dropout = dp
 		np.random.seed(1337)
 
 class LipReader(object):
@@ -145,7 +145,7 @@ class LipReader(object):
 
 		labels = ['Begin', 'Choose', 'Connection', 'Navigation', 'Next', 'Previous', 'Start', 'Stop', 'Hello', 'Web']
 		cm = confusion_matrix(self.y_test, predictions, labels=labels)
-		plot_confusion_matrix(cm, labels,normalize=False,title='Confusion matrix', cmap=plt.cm.Blues):
+		plot_confusion_matrix(cm, labels,normalize=False,title='Confusion matrix', cmap=plt.cm.Blues)
 
 		'''
 		history = model.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
@@ -202,10 +202,10 @@ class LipReader(object):
 		plt.savefig('plots/loss_plot.png')
 
 	def plot_confusion_matrix(cm, classes,normalize=False,title='Confusion matrix', cmap=plt.cm.Blues):
-	"""
-	This function prints and plots the confusion matrix.
-	Normalization can be applied by setting `normalize=True`.
-	"""
+		"""
+		This function prints and plots the confusion matrix.
+		Normalization can be applied by setting `normalize=True`.
+		"""
 		plt.imshow(cm, interpolation='nearest', cmap=cmap)
 		plt.title(title)
 		plt.colorbar()
@@ -350,15 +350,15 @@ if __name__ == '__main__':
 	parser.set_defaults(seen_validation=False)
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
-	num_epochs = [50]#10
-	learning_rates = [0.0005]#, 0.0005]
-	batch_size = [10]
+	num_epochs = [20]#10
+	learning_rates = [0.00006]#, 0.0005]
+	batch_size = [50]
 	dropout_ = [0.2]
 	for ne in num_epochs:
 		for bs in batch_size: 
 			for lr in learning_rates:
 				for dp in dropout_:
-					print 'Epochs: %d    Batch Size: %d Learning Rate: %f  Dropout: %f'%( ne, bs, lr, dp)
+					#print 'Epochs: %d    Batch Size: %d Learning Rate: %f  Dropout: %f'%( ne, bs, lr, dp)
 					config = Config(10, ne, 22, bs, lr, dp)
 					lipReader = LipReader(config)
 					lipReader.load_data(ARGS.seen_validation)
