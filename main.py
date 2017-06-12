@@ -41,7 +41,7 @@ class LipReader(object):
 	
 	def create_model(self):
 		#data_generator = keras.preprocessing.image.ImageDataGenerator()
-
+		np.random.seed(0)
 
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 				
@@ -51,14 +51,11 @@ class LipReader(object):
 		x = TimeDistributed(vgg)(input_layer)
 
 		bottleneck_model = Model(input=input_layer, output=x)
-		#bottleneck_features_train = bottleneck_model.predict(self.X_train)
-		#bottleneck_features_train = bottleneck_model.predict_generator(self.training_generator(), steps=np.shape(self.X_train)[0] / self.config.batch_size)
-		#np.save(open('bottleneck_features_train.npy', 'w'), bottleneck_features_train)
-		#np.save('bottleneck_features_train.npy', bottleneck_features_train)
+		bottleneck_features_train = bottleneck_model.predict_generator(self.training_generator(), steps=np.shape(self.X_train)[0] / self.config.batch_size)
+		np.save('bottleneck_features_train.npy', bottleneck_features_train)
 
-		#bottleneck_features_val = bottleneck_model.predict(self.X_val)
-		#np.save(open('bottleneck_features_val.npy', 'w'), bottleneck_features_val)
-		#np.save('bottleneck_features_val.npy', bottleneck_features_val)
+		bottleneck_features_val = bottleneck_model.predict(self.X_val)
+		np.save('bottleneck_features_val.npy', bottleneck_features_val)
 
 		#vgg = Model(input=vgg_base.input, output=vgg_base.output)
 		#vgg.trainable = False
@@ -135,7 +132,7 @@ class LipReader(object):
 		history = model.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
 					 epochs=self.config.num_epochs, validation_data=(self.X_val, one_hot_labels_val))
 		'''
-		self.create_plots(history)
+		#self.create_plots(history)
 
 		#print('Layer names and layer indices:')
 		#for i, layer in enumerate(base_model.layers):
@@ -304,8 +301,8 @@ if __name__ == '__main__':
 	parser.set_defaults(seen_validation=False)
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
-	num_epochs = [70]#10
-	learning_rates = [0.001]#, 0.00001]
+	num_epochs = [50]#10
+	learning_rates = [0.0005]#, 0.0005]
 	batch_size = [10]
 	dropout_ = [0.2]
 	for ne in num_epochs:
