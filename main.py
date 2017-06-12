@@ -42,14 +42,16 @@ class LipReader(object):
 	def create_model(self, seen_validation):
 		np.random.seed(0)
 		
-		'''
+		
 		bottleneck_train_path = 'bottleneck_features_train.npy'
 		bottleneck_val_path = 'bottleneck_features_val.npy'
+		top_model_weights = 'bottleneck_TOP_LAYER.h5'
 		
 		if seen_validation is False:
-			bottleneck_train_path = 'unseen_bottleneck_features_train.npy'
-			bottleneck_val_path = 'unseen_bottleneck_features_val.npy'
-		'''
+			top_model_weights = 'unseen_bottleneck_TOP_LAYER.h5'
+			#bottleneck_train_path = 'unseen_bottleneck_features_train.npy'
+			#bottleneck_val_path = 'unseen_bottleneck_features_val.npy'
+		
 
 		input_layer = keras.layers.Input(shape=(self.config.max_seq_len, self.config.MAX_WIDTH, self.config.MAX_HEIGHT, 3))
 				
@@ -129,7 +131,7 @@ class LipReader(object):
 
 		model_top = Model(input=input_layer_2, output=preds)
 
-		model_top.load_weights('bottleneck_TOP_LAYER.h5')
+		model_top.load_weights(top_model_weights)
 
 		x = model(input_layer)
 		preds = model_top(x)
@@ -154,10 +156,6 @@ class LipReader(object):
 					 epochs=self.config.num_epochs, validation_data=(self.X_val, one_hot_labels_val))
 		
 		self.create_plots(history)
-
-		print('Layer names and layer indices:')
-		for i, layer in enumerate(final_model.layers):
-			print(i, layer.name)
 
 
 		'''
