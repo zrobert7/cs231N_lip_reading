@@ -23,8 +23,6 @@ class Config(object):
 		self.learning_rate = lr
 		self.MAX_WIDTH = 90
 		self.MAX_HEIGHT = 90
-                self.dropout = dp
-  		np.random.seed(1337)
 
 class LipReader(object):
 	def __init__(self, config):
@@ -59,6 +57,8 @@ class LipReader(object):
 
 		vgg = Model(input=vgg_base.input, output=vgg_base.output)
 		x = TimeDistributed(vgg)(input_layer)
+
+		model = Model(input=input_layer, output=x)
 
 		#bottleneck_model = Model(input=input_layer, output=x)
 
@@ -108,32 +108,39 @@ class LipReader(object):
 		#val_data = np.load(bottleneck_val_path)
 
 
-		x = TimeDistributed(keras.layers.core.Flatten(),input_shape=train_data.shape[1:])(x)
+		model_top = Sequential()
+		model.add(TimeDistributed(keras.layers.core.Flatten(),input_shape=model.output_shape[1:]))
 		
 	
 		lstm = keras.layers.recurrent.LSTM(256)
-		x = keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None)(x)
+		model_top.add(keras.layers.wrappers.Bidirectional(lstm, merge_mode='concat', weights=None))
 
 		#model.add(keras.layers.normalization.BatchNormalization(axis=3, momentum=0.99, epsilon=0.001))
 		#model.add(keras.layers.core.Activation('relu'))
-		x = keras.layers.core.Dropout(rate=dp)(x)
+		model_top.add(keras.layers.core.Dropout(rate=dp))
 
-		x = keras.layers.core.Dense(10)(x)
+		model_top.add(keras.layers.core.Dense(10))
 
-		predictions = keras.layers.core.Activation('softmax')(x)
+		model_top.add(keras.layers.core.Activation('softmax'))
+
+		model_top.load_weights('bottleneck_TOP_LAYER.h5')
+
+		preds = model_top(model)
+
+		final_model = Model(input=input_layer, output=preds)
 
 		#model = Model(inputs=input_layer, outputs=predictions)
 
 		
 		adam = keras.optimizers.Adam(lr=self.config.learning_rate)#, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-		model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
+		final_model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['accuracy'])
 
 		one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
 		
 		print('Fitting the model...')
 
-		history = model.fit(train_data, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
+		history = final_model.fit(train_data, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
 							validation_data=(val_data, one_hot_labels_val))
 		
 
@@ -141,7 +148,7 @@ class LipReader(object):
 		history = model.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
 					 epochs=self.config.num_epochs, validation_data=(self.X_val, one_hot_labels_val))
 		'''
-		#self.create_plots(history)
+		self.create_plots(history)
 
 		#print('Layer names and layer indices:')
 		#for i, layer in enumerate(base_model.layers):
@@ -318,7 +325,7 @@ if __name__ == '__main__':
 		for bs in batch_size: 
 			for lr in learning_rates:
 				for dp in dropout_:
-					print 'Epochs: %d    Batch Size: %d Learning Rate: %f  Dropout: %f'%( ne, bs, lr, dp)
+					print("Epochs: %n    Batch Size: %n Learning Rate: %n", ne, bs, lr)
 					config = Config(10, ne, 22, bs, lr, dp)
 					lipReader = LipReader(config)
 					lipReader.load_data(ARGS.seen_validation)
