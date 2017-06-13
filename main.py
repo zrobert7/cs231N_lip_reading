@@ -135,17 +135,26 @@ class LipReader(object):
 
 		one_hot_labels_train = keras.utils.to_categorical(self.y_train, num_classes=self.config.num_classes)
 		one_hot_labels_val = keras.utils.to_categorical(self.y_val, num_classes=self.config.num_classes)
-		
+		one_hot_labels_test = keras.utils.to_categorical(self.y_test, num_classes=self.config.num_classes)		
+
 		print('Fitting the model...')
 
 		history = model.fit(train_data, one_hot_labels_train, epochs=self.config.num_epochs, batch_size=self.config.batch_size,\
 							validation_data=(val_data, one_hot_labels_val))
 
-		predictions = model.predict(bottleneck_model.predict(self.X_test)) 
+		evaluation = model.evaluate(bottleneck_model.predict(self.X_test), one_hot_labels_test) 
+		print(evaluation)
 
-		labels = ['Begin', 'Choose', 'Connection', 'Navigation', 'Next', 'Previous', 'Start', 'Stop', 'Hello', 'Web']
+		predictions = model.predict(bottleneck_model.predict(self.X_test)) 
+		predictions = np.argmax(predictions, axis=1)
+
+		print(self.y_test)
+		print(predictions)
+		#labels = ['Begin', 'Choose', 'Connection', 'Navigation', 'Next', 'Previous', 'Start', 'Stop', 'Hello', 'Web']
+		labels = [0,1,2,3,4,5,6,7,8,9]
 		cm = confusion_matrix(self.y_test, predictions, labels=labels)
-		plot_confusion_matrix(cm, labels,normalize=False,title='Confusion matrix', cmap=plt.cm.Blues)
+		print(cm)
+		#self.plot_confusion_matrix(cm, labels)
 
 		'''
 		history = model.fit_generator(self.training_generator(), steps_per_epoch=np.shape(self.X_train)[0] / self.config.batch_size,\
@@ -201,11 +210,21 @@ class LipReader(object):
 		plt.legend(['train', 'validation'], loc='upper left')
 		plt.savefig('plots/loss_plot.png')
 
-	def plot_confusion_matrix(cm, classes,normalize=False,title='Confusion matrix', cmap=plt.cm.Blues):
+	def plot_confusion_matrix(self, cm, labels):
 		"""
 		This function prints and plots the confusion matrix.
 		Normalization can be applied by setting `normalize=True`.
 		"""
+		fig = plt.figure()
+		ax = fig.add_subplot(111)
+		cax = ax.matshow(cm)
+		plt.title('Confusion matrix of the classifier')
+		fig.colorbar(cax)
+		ax.set_xticklabels([''] + labels)
+		ax.set_yticklabels([''] + labels)
+		plt.xlabel('Predicted')
+		plt.ylabel('True')
+		'''
 		plt.imshow(cm, interpolation='nearest', cmap=cmap)
 		plt.title(title)
 		plt.colorbar()
@@ -228,6 +247,7 @@ class LipReader(object):
 		plt.tight_layout()
 		plt.ylabel('True label')
 		plt.xlabel('Predicted label')
+		'''
 		plt.savefig('confusion.png')
 
 
@@ -350,10 +370,10 @@ if __name__ == '__main__':
 	parser.set_defaults(seen_validation=False)
 	ARGS = parser.parse_args()
 	print("Seen validation: %r" % (ARGS.seen_validation))
-	num_epochs = [5]#10
+	num_epochs = [25]#10
 	learning_rates = [0.00006]#, 0.0005]
 	batch_size = [50]
-	dropout_ = [0.2]
+	dropout_ = [0.4]
 	for ne in num_epochs:
 		for bs in batch_size: 
 			for lr in learning_rates:
